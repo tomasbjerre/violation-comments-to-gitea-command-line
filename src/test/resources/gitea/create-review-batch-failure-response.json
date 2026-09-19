@@ -1,0 +1,4 @@
+{
+  "message": "LineBlame[refs/pull/1/head, /data/git/repositories/admin/violations-demo.git, src/main/java/se/bjurr/violations/lib/example/MyClass.java, 9999]: exit status 128 - fatal: file src/main/java/se/bjurr/violations/lib/example/MyClass.java has only 15 lines",
+  "url": "http://localhost:3000/api/swagger"
+}

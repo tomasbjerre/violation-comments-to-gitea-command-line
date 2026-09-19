@@ -13,6 +13,7 @@ import se.bjurr.violations.comments.gitea.lib.client.model.GiteaIssueComment;
 import se.bjurr.violations.comments.gitea.lib.client.model.GiteaPullRequest;
 import se.bjurr.violations.comments.gitea.lib.client.model.GiteaReview;
 import se.bjurr.violations.comments.gitea.lib.client.model.GiteaReviewComment;
+import se.bjurr.violations.comments.gitea.lib.client.model.GiteaReviewCommentInput;
 import se.bjurr.violations.comments.lib.CommentsProvider;
 import se.bjurr.violations.comments.lib.model.ChangedFile;
 import se.bjurr.violations.comments.lib.model.Comment;
@@ -36,6 +37,7 @@ public class GiteaCommentsProvider implements CommentsProvider {
   private final ViolationsLogger violationsLogger;
   private final GiteaClient client;
   private final String headSha;
+  private final List<GiteaReviewCommentInput> pendingReviewComments = new ArrayList<>();
 
   public GiteaCommentsProvider(
       final ViolationCommentsToGiteaApi api, final ViolationsLogger violationsLogger) {
@@ -67,7 +69,30 @@ public class GiteaCommentsProvider implements CommentsProvider {
   @Override
   public void createSingleFileComment(
       final ChangedFile file, final Integer line, final String comment) {
+    if (this.api.getUseReviewComments()) {
+      final int position = line == null || line <= 0 ? 1 : line;
+      this.pendingReviewComments.add(
+          new GiteaReviewCommentInput(file.getFilename(), position, comment));
+      return;
+    }
     this.client.createReviewComment(this.headSha, file.getFilename(), line, comment);
+  }
+
+  /**
+   * Submits any single file comments buffered by {@link #createSingleFileComment} (when {@link
+   * ViolationCommentsToGiteaApi#getUseReviewComments()} is {@code true}) as a single pull request
+   * review, instead of one review per comment. Must be called once after all comments have been
+   * created. See {@link GiteaClient#createReview} for why this is not atomic on Gitea.
+   */
+  public void flushPendingReview() {
+    if (this.pendingReviewComments.isEmpty()) {
+      return;
+    }
+    try {
+      this.client.createReview(this.headSha, this.pendingReviewComments);
+    } finally {
+      this.pendingReviewComments.clear();
+    }
   }
 
   @Override
