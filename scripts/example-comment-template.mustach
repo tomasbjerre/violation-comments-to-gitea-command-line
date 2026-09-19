@@ -1,0 +1,6 @@
+🔎 **{{violation.severity}}** reported by {{violation.reporter}}{{#violation.rule}} (`{{violation.rule}}`){{/violation.rule}}
+
+> {{violation.message}}
+
+_Rendered from a custom -comment-template (scripts/example-comment-template.mustach) - without
+-comment-template, the tool's own nicer default is used instead._

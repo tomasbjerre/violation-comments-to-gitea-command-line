@@ -1,0 +1,12 @@
+[
+  {
+    "filename": "src/main/java/com/example/MyClass.java",
+    "status": "changed",
+    "additions": 3,
+    "deletions": 0,
+    "changes": 3,
+    "html_url": "http://localhost:3000/admin/violations-demo/src/commit/6b7d81f9c2d53de5643d891bf76fec18376a6e79/src/main/java/com/example/MyClass.java",
+    "contents_url": "http://localhost:3000/api/v1/repos/admin/violations-demo/contents/src/main/java/com/example/MyClass.java?ref=6b7d81f9c2d53de5643d891bf76fec18376a6e79",
+    "raw_url": "http://localhost:3000/admin/violations-demo/raw/commit/6b7d81f9c2d53de5643d891bf76fec18376a6e79/src/main/java/com/example/MyClass.java"
+  }
+]

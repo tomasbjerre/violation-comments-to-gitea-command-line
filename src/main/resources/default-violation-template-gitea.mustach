@@ -1,0 +1,13 @@
+**{{violation.severity}}** · {{violation.reporter}}{{#violation.rule}} · `{{violation.rule}}`{{/violation.rule}} · `{{changedFile.filename}}:{{violation.startLine}}`
+
+> {{violation.message}}
+{{#violation.suggestedChange}}
+
+<details><summary>Suggested change</summary>
+
+```
+{{violation.suggestedChange}}
+```
+
+</details>
+{{/violation.suggestedChange}}
