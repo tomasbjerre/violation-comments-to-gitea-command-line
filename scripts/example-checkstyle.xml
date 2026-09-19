@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<checkstyle version="8.0">
+  <file name="src/main/java/com/example/MyClass.java">
+    <error line="8" severity="error" message="no not ok!" source="com.example.Rule"/>
+  </file>
+</checkstyle>

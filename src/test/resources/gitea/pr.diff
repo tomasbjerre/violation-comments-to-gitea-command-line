@@ -1,0 +1,17 @@
+diff --git a/src/main/java/com/example/MyClass.java b/src/main/java/com/example/MyClass.java
+index a765eec..6ba6576 100644
+--- a/src/main/java/com/example/MyClass.java
++++ b/src/main/java/com/example/MyClass.java
+@@ -5,9 +5,12 @@ public class MyClass {
+   public void doSomething() {
+     int result = compute(1, 2);
+     System.out.println("result: " + result);
++    System.out.println("done");
+   }
+ 
+   private int compute(final int a, final int b) {
++    // intentionally sloppy line, for a violation comment to attach to below
++    int unused = 0;
+     return a + b;
+   }
+ }
