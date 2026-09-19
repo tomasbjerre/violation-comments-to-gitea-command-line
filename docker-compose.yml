@@ -1,6 +1,6 @@
 services:
   gitea:
-    image: gitea/gitea:1.27.2
+    image: gitea/gitea:1.27.3
     container_name: violation-comments-gitea
     environment:
       - USER_UID=1000
