@@ -1,0 +1,17 @@
+.gitea-data
+.classpath
+.project
+.settings
+generated-src
+build
+target
+bin
+temp
+.gradle
+.couscous
+couscous.phar
+.okhttpcache
+index.js
+package.json
+package-lock.json
+node_modules
