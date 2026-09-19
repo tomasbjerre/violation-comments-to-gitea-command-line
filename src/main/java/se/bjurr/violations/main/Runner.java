@@ -83,6 +83,16 @@ public class Runner {
       arity = "1")
   private boolean createSingleFileComments = true; // NOPMD picocli reflection
 
+  @Option(
+      names = {"-use-review-comments", "-urc"},
+      arity = "1",
+      description =
+          "True if single file comments should be batched into one pull request review instead"
+              + " of one HTTP request per comment. Not atomic on Gitea: a comment with an invalid"
+              + " position can leave behind a stray review holding the comments applied before it"
+              + " failed.")
+  private boolean useReviewComments = false; // NOPMD picocli reflection
+
   @Option(names = "-keep-old-comments", arity = "1")
   private Boolean keepOldComments = false; // NOPMD picocli reflection
 
@@ -238,6 +248,7 @@ public class Runner {
           .withViolations(allParsedViolations)
           .withCreateCommentWithAllSingleFileComments(this.createCommentWithAllSingleFileComments)
           .withCreateSingleFileComments(this.createSingleFileComments)
+          .withUseReviewComments(this.useReviewComments)
           .withCommentOnlyChangedContent(this.commentOnlyChangedContent)
           .withShouldCommentOnlyChangedFiles(this.commentOnlyChangedFiles)
           .withCommentOnlyChangedContentContext(this.commentOnlyChangedContentContext)

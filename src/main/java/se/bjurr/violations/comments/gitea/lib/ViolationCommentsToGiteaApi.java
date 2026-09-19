@@ -12,7 +12,6 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import se.bjurr.violations.comments.lib.CommentsProvider;
 import se.bjurr.violations.lib.ViolationsLogger;
 import se.bjurr.violations.lib.model.Violation;
 import se.bjurr.violations.lib.util.Utils;
@@ -43,6 +42,7 @@ public class ViolationCommentsToGiteaApi {
   private String proxyPassword;
   private Integer maxNumberOfViolations;
   private boolean shouldCommentOnlyChangedFiles = true;
+  private boolean useReviewComments;
 
   private static class ViolationsLoggerJavaLogger implements ViolationsLogger {
     @Override
@@ -66,9 +66,27 @@ public class ViolationCommentsToGiteaApi {
     if (Utils.isNullOrEmpty(this.commentTemplate)) {
       this.commentTemplate = this.getDefaultTemplate();
     }
-    final CommentsProvider commentsProvider =
+    final GiteaCommentsProvider commentsProvider =
         new GiteaCommentsProvider(this, this.violationsLogger);
     createComments(this.violationsLogger, this.violations, commentsProvider);
+    commentsProvider.flushPendingReview();
+  }
+
+  /**
+   * When {@code true}, single file comments ({@link #withCreateSingleFileComments(boolean)}) are
+   * batched into one Gitea pull request review instead of being posted individually, one HTTP
+   * request per comment. Unlike GitHub, Gitea does not apply this atomically: if one comment in the
+   * batch is invalid (e.g. its position is past the end of the file), Gitea stops there and leaves
+   * behind a stray review, in {@code PENDING} state, already holding the comments applied before
+   * the failure. Off by default.
+   */
+  public ViolationCommentsToGiteaApi withUseReviewComments(final boolean useReviewComments) {
+    this.useReviewComments = useReviewComments;
+    return this;
+  }
+
+  public boolean getUseReviewComments() {
+    return this.useReviewComments;
   }
 
   private String getDefaultTemplate() {

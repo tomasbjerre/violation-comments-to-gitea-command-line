@@ -47,7 +47,10 @@ import se.bjurr.violations.lib.reports.Parser;
  * se.bjurr.violations.comments.gitea.lib.client.GiteaInvoker}'s URL/header/body construction is
  * covered too. The fixtures under {@code src/test/resources/gitea} are unmodified captures, except
  * {@code list-issue-comments-response.json}, which wraps the single-comment creation response in a
- * JSON array to match the shape of the list endpoint.
+ * JSON array to match the shape of the list endpoint. {@code create-review-batch-response.json} and
+ * {@code create-review-batch-failure-response.json} are likewise unmodified captures, of a real
+ * 2-comment batched review and a real partial failure from an out-of-range position, respectively -
+ * recorded while implementing {@link ViolationCommentsToGiteaApi#withUseReviewComments}.
  */
 class GiteaCommentsProviderWireMockTest {
 
@@ -221,6 +224,90 @@ class GiteaCommentsProviderWireMockTest {
     final ChangedFile file = files.get(0);
     assertThat(file.getFilename()).isEqualTo("src/main/java/com/example/MyClass.java");
     assertThat(file.getSpecifics().get(0)).contains("@@ -5,9 +5,12 @@");
+  }
+
+  // --- withUseReviewComments(true): batching single file comments into one review (-urc) ---
+
+  @Test
+  void createSingleFileCommentBuffersInsteadOfPostingWhenUseReviewCommentsIsEnabled() {
+    final GiteaCommentsProvider provider =
+        this.newProvider(this.newApi().withUseReviewComments(true));
+    final ChangedFile file = new ChangedFile("a.java", List.of(""));
+
+    provider.createSingleFileComment(file, 1, "first");
+    provider.createSingleFileComment(file, 2, "second");
+
+    this.wireMock.verify(0, postRequestedFor(urlPathEqualTo(PR_PATH + "/reviews")));
+  }
+
+  @Test
+  void flushPendingReviewPostsAllBufferedCommentsAsOneRealReview() {
+    this.wireMock.stubFor(
+        post(urlPathEqualTo(PR_PATH + "/reviews"))
+            .willReturn(okJson(fixture("create-review-batch-response.json"))));
+
+    final GiteaCommentsProvider provider =
+        this.newProvider(this.newApi().withUseReviewComments(true));
+    provider.createSingleFileComment(
+        new ChangedFile("src/main/java/se/bjurr/violations/lib/example/MyClass.java", List.of("")),
+        1,
+        "Recorded batched comment 1");
+    provider.createSingleFileComment(
+        new ChangedFile(
+            "src/main/java/se/bjurr/violations/lib/example/OtherClass.java", List.of("")),
+        1,
+        "Recorded batched comment 2");
+
+    provider.flushPendingReview();
+
+    final String body =
+        this.lastRequestBodyDecoded(postRequestedFor(urlPathEqualTo(PR_PATH + "/reviews")));
+    assertThat(body)
+        .isEqualTo(
+            "{\"commit_id\":\"6b7d81f9c2d53de5643d891bf76fec18376a6e79\",\"event\":\"COMMENT\","
+                + "\"comments\":[{\"path\":\"src/main/java/se/bjurr/violations/lib/example/MyClass.java\","
+                + "\"new_position\":1,\"body\":\"Recorded batched comment 1\"},"
+                + "{\"path\":\"src/main/java/se/bjurr/violations/lib/example/OtherClass.java\","
+                + "\"new_position\":1,\"body\":\"Recorded batched comment 2\"}]}");
+  }
+
+  @Test
+  void flushPendingReviewDoesNothingWhenThereAreNoBufferedComments() {
+    final GiteaCommentsProvider provider =
+        this.newProvider(this.newApi().withUseReviewComments(true));
+
+    provider.flushPendingReview();
+
+    this.wireMock.verify(0, postRequestedFor(urlPathEqualTo(PR_PATH + "/reviews")));
+  }
+
+  /**
+   * Confirms the real, surprising behavior recorded against a local Gitea instance: an invalid
+   * comment in the batch does not roll back the ones already applied (unlike GitHub), and does not
+   * even surface as an exception here - {@link
+   * se.bjurr.violations.comments.gitea.lib.client.GiteaInvoker} logs a non-2xx response rather than
+   * throwing, so {@code flushPendingReview} returns normally having silently gotten back an error
+   * body it can't fully parse as a review.
+   */
+  @Test
+  void flushPendingReviewDoesNotThrowOnTheRealNonAtomicPartialFailure() {
+    this.wireMock.stubFor(
+        post(urlPathEqualTo(PR_PATH + "/reviews"))
+            .willReturn(
+                aResponse()
+                    .withStatus(500)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody(fixture("create-review-batch-failure-response.json"))));
+
+    final GiteaCommentsProvider provider =
+        this.newProvider(this.newApi().withUseReviewComments(true));
+    final ChangedFile file = new ChangedFile("a.java", List.of(""));
+    provider.createSingleFileComment(file, 1, "valid");
+    provider.createSingleFileComment(file, 9999, "invalid");
+
+    provider.flushPendingReview(); // must not throw
+
+    this.wireMock.verify(postRequestedFor(urlPathEqualTo(PR_PATH + "/reviews")));
   }
 
   // --- shouldComment(): the -comment-only-changed-content / -coccc CLI options ---

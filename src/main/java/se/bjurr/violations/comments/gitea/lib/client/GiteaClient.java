@@ -9,10 +9,12 @@ import java.util.List;
 import java.util.Map;
 import se.bjurr.violations.comments.gitea.lib.client.GiteaInvoker.Method;
 import se.bjurr.violations.comments.gitea.lib.client.model.GiteaChangedFile;
+import se.bjurr.violations.comments.gitea.lib.client.model.GiteaCreateReviewRequest;
 import se.bjurr.violations.comments.gitea.lib.client.model.GiteaIssueComment;
 import se.bjurr.violations.comments.gitea.lib.client.model.GiteaPullRequest;
 import se.bjurr.violations.comments.gitea.lib.client.model.GiteaReview;
 import se.bjurr.violations.comments.gitea.lib.client.model.GiteaReviewComment;
+import se.bjurr.violations.comments.gitea.lib.client.model.GiteaReviewCommentInput;
 import se.bjurr.violations.lib.ViolationsLogger;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.PropertyNamingStrategies;
@@ -167,6 +169,30 @@ public class GiteaClient {
             + ",\"body\":\""
             + this.safeJson(body)
             + "\"}]}";
+    final String url = this.getPullBase() + "/reviews";
+    final String json = this.doInvokeUrl(url, Method.POST, postContent);
+    return this.readValue(json, GiteaReview.class, url);
+  }
+
+  /**
+   * Posts every given comment as one review, in a single request ({@code event: "COMMENT"}).
+   *
+   * <p><b>Not atomic on Gitea</b> (unlike GitHub's equivalent): Gitea applies each comment in order
+   * and stops on the first invalid one (e.g. a position past the end of the file), leaving behind a
+   * stray review in {@code PENDING} state that already holds the comments applied before the
+   * failure - confirmed against a real Gitea 1.27 instance.
+   *
+   * <p>That failure is also not surfaced as an exception, consistent with the rest of this client
+   * ({@link GiteaInvoker} logs a non-2xx response at INFO rather than throwing): this method
+   * returns a mostly-empty {@link GiteaReview} (its response body was an error object, not a
+   * review) rather than failing loudly. Check the {@code ViolationsLogger} output, at INFO level,
+   * to notice a partial batch failure.
+   */
+  public GiteaReview createReview(
+      final String commitId, final List<GiteaReviewCommentInput> comments) {
+    final GiteaCreateReviewRequest request =
+        new GiteaCreateReviewRequest(commitId, "COMMENT", comments);
+    final String postContent = JSON_MAPPER.writeValueAsString(request);
     final String url = this.getPullBase() + "/reviews";
     final String json = this.doInvokeUrl(url, Method.POST, postContent);
     return this.readValue(json, GiteaReview.class, url);
