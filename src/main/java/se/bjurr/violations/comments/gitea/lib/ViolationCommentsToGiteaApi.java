@@ -4,6 +4,7 @@ import static java.util.Optional.ofNullable;
 import static se.bjurr.violations.comments.lib.CommentsCreator.createComments;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -99,8 +100,8 @@ public class ViolationCommentsToGiteaApi {
           BufferedReader br = new BufferedReader(is)) {
         return br.lines().collect(Collectors.joining("\n"));
       }
-    } catch (final Throwable t) {
-      throw new RuntimeException(t.getMessage(), t);
+    } catch (final IOException e) {
+      throw new RuntimeException(e.getMessage(), e);
     }
   }
 

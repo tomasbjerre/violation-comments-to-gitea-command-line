@@ -80,9 +80,6 @@ public class GiteaInvoker {
             requestBuilder.POST(BodyPublishers.ofString(body, UTF_8));
             break;
           }
-        default:
-          throw new IllegalArgumentException(
-              "Unsupported http method:\n" + url + "\n" + method + "\n" + postContent);
       }
 
       final HttpClient.Builder clientBuilder =
