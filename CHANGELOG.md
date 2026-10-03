@@ -1,3 +1,9 @@
+## 1.1.1 (2026-10-03)
+
+### Dependency updates
+
+- update plugin se.bjurr.gradle.bundle-command-shadow to v2.4.4 (#8) ([36698](https://github.com/tomasbjerre/violation-comments-to-gitea-command-line/commit/3669894f7423f5e) renovate[bot])  
+- update dependency se.bjurr.violations:violations-lib to v3.0.2 (#9) ([dc526](https://github.com/tomasbjerre/violation-comments-to-gitea-command-line/commit/dc5264ad71d7a53) renovate[bot])  
 # violation-comments-to-gitea-command-line changelog
 
 Changelog of violation-comments-to-gitea-command-line.
